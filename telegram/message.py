@@ -186,9 +186,9 @@ class Message(object):
         if self.location:
             json_data['location'] = self.location.to_json()
         if self.new_chat_participant:
-            json_data['new_chat_participant'] = self.new_chat_participant
+            json_data['new_chat_participant'] = self.new_chat_participant.__dict__
         if self.left_chat_participant:
-            json_data['left_chat_participant'] = self.left_chat_participant
+            json_data['left_chat_participant'] = self.left_chat_participant.__dict__
         if self.new_chat_title:
             json_data['new_chat_title'] = self.new_chat_title
         if self.new_chat_photo:

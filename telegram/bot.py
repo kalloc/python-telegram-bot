@@ -4,11 +4,12 @@
 """A library that provides a Python interface to the Telegram Bot API"""
 
 import json
-import urllib
-import urllib2
+# import urllib
+from six.moves import urllib
 
 from telegram import (User, Message, Update, UserProfilePhotos, TelegramError,
                       ReplyMarkup, InputFile)
+from telegram.inputfile import is_file
 
 
 class Bot(object):
@@ -67,7 +68,7 @@ class Bot(object):
         url = '%s/getMe' % (self.base_url)
 
         json_data = self._requestUrl(url, 'GET')
-        data = self._parseAndCheckTelegram(json_data)
+        data = self._parseAndCheckTelegram(json_data.decode())
 
         return User.de_json(data)
 
@@ -116,7 +117,7 @@ class Bot(object):
                 data['reply_markup'] = reply_markup
 
         json_data = self._requestUrl(url, 'POST', data=data)
-        data = self._parseAndCheckTelegram(json_data)
+        data = self._parseAndCheckTelegram(json_data.decode())
 
         return Message.de_json(data)
 
@@ -153,7 +154,7 @@ class Bot(object):
             data['message_id'] = message_id
 
         json_data = self._requestUrl(url, 'POST', data=data)
-        data = self._parseAndCheckTelegram(json_data)
+        data = self._parseAndCheckTelegram(json_data.decode())
 
         return Message.de_json(data)
 
@@ -205,7 +206,7 @@ class Bot(object):
                 data['reply_markup'] = reply_markup
 
         json_data = self._requestUrl(url, 'POST', data=data)
-        data = self._parseAndCheckTelegram(json_data)
+        data = self._parseAndCheckTelegram(json_data.decode())
 
         return Message.de_json(data)
 
@@ -254,7 +255,7 @@ class Bot(object):
                 data['reply_markup'] = reply_markup
 
         json_data = self._requestUrl(url, 'POST', data=data)
-        data = self._parseAndCheckTelegram(json_data)
+        data = self._parseAndCheckTelegram(json_data.decode())
 
         return Message.de_json(data)
 
@@ -300,7 +301,7 @@ class Bot(object):
                 data['reply_markup'] = reply_markup
 
         json_data = self._requestUrl(url, 'POST', data=data)
-        data = self._parseAndCheckTelegram(json_data)
+        data = self._parseAndCheckTelegram(json_data.decode())
 
         return Message.de_json(data)
 
@@ -346,7 +347,7 @@ class Bot(object):
                 data['reply_markup'] = reply_markup
 
         json_data = self._requestUrl(url, 'POST', data=data)
-        data = self._parseAndCheckTelegram(json_data)
+        data = self._parseAndCheckTelegram(json_data.decode())
 
         return Message.de_json(data)
 
@@ -393,7 +394,7 @@ class Bot(object):
                 data['reply_markup'] = reply_markup
 
         json_data = self._requestUrl(url, 'POST', data=data)
-        data = self._parseAndCheckTelegram(json_data)
+        data = self._parseAndCheckTelegram(json_data.decode())
 
         return Message.de_json(data)
 
@@ -441,7 +442,7 @@ class Bot(object):
                 data['reply_markup'] = reply_markup
 
         json_data = self._requestUrl(url, 'POST', data=data)
-        data = self._parseAndCheckTelegram(json_data)
+        data = self._parseAndCheckTelegram(json_data.decode())
 
         return Message.de_json(data)
 
@@ -510,7 +511,7 @@ class Bot(object):
             data['limit'] = limit
 
         json_data = self._requestUrl(url, 'POST', data=data)
-        data = self._parseAndCheckTelegram(json_data)
+        data = self._parseAndCheckTelegram(json_data.decode())
 
         return UserProfilePhotos.de_json(data)
 
@@ -552,7 +553,7 @@ class Bot(object):
             data['timeout'] = timeout
 
         json_data = self._requestUrl(url, 'POST', data=data)
-        data = self._parseAndCheckTelegram(json_data)
+        data = self._parseAndCheckTelegram(json_data.decode())
 
         return [Update.de_json(x) for x in data]
 
@@ -579,7 +580,7 @@ class Bot(object):
         data = {'url': webhook_url}
 
         json_data = self._requestUrl(url, 'POST', data=data)
-        data = self._parseAndCheckTelegram(json_data)
+        data = self._parseAndCheckTelegram(json_data.decode())
 
         return True
 
@@ -602,35 +603,33 @@ class Bot(object):
         """
 
         if method == 'POST':
-            if 'audio' in data and (isinstance(data['audio'], file) or 'http' in data['audio']) or \
-               'document' in data and (isinstance(data['document'], file) or 'http' in data['document']) or \
-               'photo' in data and (isinstance(data['photo'], file) or 'http' in data['photo']) or \
-               'video' in data and (isinstance(data['video'], file) or 'http' in data['video']):
+            if 'audio' in data and is_file(data['audio']) or \
+               'document' in data and is_file(data['document']) or \
+               'photo' in data and is_file(data['photo']) or \
+               'video' in data and is_file(data['video']):
                 try:
                     data = InputFile(data)
-                    request = urllib2.Request(
+                    request = urllib.request(
                         url,
                         data=data.to_form(),
                         headers=data.headers
                     )
-                    return urllib2.urlopen(request).read()
-                except urllib2.URLError as e:
+                    return urllib.request.urlopen(request).read()
+                except urllib.error.URLError as e:
                     raise TelegramError(str(e))
             else:
                 try:
-                    return urllib2.urlopen(
+                    return urllib.request.urlopen(
                         url,
-                        urllib.urlencode(data)
+                        urllib.parse.urlencode(data).encode()
                     ).read()
-                except urllib.IOError as e:
-                    raise TelegramError(str(e))
-                except urllib2.URLError as e:
+                except urllib.error.URLError as e:
                     raise TelegramError(str(e))
 
         if method == 'GET':
             try:
-                return urllib2.urlopen(url).read()
-            except urllib2.URLError as e:
+                return urllib.request.urlopen(url).read()
+            except urllib.error.URLError as e:
                 raise TelegramError(str(e))
         return 0
 

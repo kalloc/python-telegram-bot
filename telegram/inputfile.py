@@ -1,45 +1,54 @@
 #!/usr/bin/env python
 
-
-import mimetools
-import mimetypes
+try:
+    from mimetools import choose_boundary
+except:
+    from email.generator import _make_boundary as choose_boundary
+from mimetypes import guess_type
+import six
 import os
-import urllib2
+
+
+DEFAULT_MIME_TYPE = 'application/octet-stream'
+USER_AGENT = 'Python Telegram Bot'\
+             ' (https://github.com/leandrotoledo/python-telegram-bot)'
+
+if six.PY3:
+    import io
+
+    def is_file(item):
+        return isinstance(item, io.TextIOWrapper)
+else:
+    def is_file(item):
+        return isinstance(item, file)
 
 
 class InputFile(object):
     def __init__(self,
                  data):
         self.data = data
-        self.boundary = mimetools.choose_boundary()
+        self.boundary = choose_boundary()
 
-        if 'audio' in data:
+        if 'audio' in data and is_file(data['audio']):
             self.input_name = 'audio'
             self.input_file = data.pop('audio')
-        if 'document' in data:
+        if 'document' in data and is_file(data['document']):
             self.input_name = 'document'
             self.input_file = data.pop('document')
-        if 'photo' in data:
+        if 'photo' in data and is_file(data['photo']):
             self.input_name = 'photo'
             self.input_file = data.pop('photo')
-        if 'video' in data:
+        if 'video' in data and is_file(data['video']):
             self.input_name = 'video'
             self.input_file = data.pop('video')
 
-        if isinstance(self.input_file, file):
-            self.filename = os.path.basename(self.input_file.name)
-            self.input_file_content = self.input_file.read()
-        if 'http' in self.input_file:
-            self.filename = os.path.basename(self.input_file)
-            self.input_file_content = urllib2.urlopen(self.input_file).read()
-
-        self.mimetype = mimetypes.guess_type(self.filename)[0] or \
-            'application/octet-stream'
+        self.input_file_content = self.input_file.read()
+        self.filename = os.path.basename(self.input_file.name)
+        self.mimetype = guess_type(self.filename)[0] or DEFAULT_MIME_TYPE
 
     @property
     def headers(self):
-        return {'User-agent': 'Python Telegram Bot (https://github.com/leandrotoledo/python-telegram-bot)',
-                'Content-type': self.content_type}
+        return {'User-agent': USER_AGENT, 'Content-type': self.content_type}
 
     @property
     def content_type(self):
@@ -63,7 +72,7 @@ class InputFile(object):
             form_boundary,
             str('Content-Disposition: form-data; name="%s"; filename="%s"' % (
                 self.input_name, self.filename
-            )),
+                )),
             'Content-Type: %s' % self.mimetype,
             '',
             self.input_file_content
