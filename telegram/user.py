@@ -31,5 +31,12 @@ class User(object):
             json_data['username'] = self.username
         return json.dumps(json_data)
 
+    def name(self):
+        if self.username:
+            return self.username
+        if self.last_name:
+            return '{} {}'.format(self.first_name, self.last_name)
+        return self.first_name
+
     def __str__(self):
         return self.to_json()
